@@ -1,52 +1,42 @@
-name: Arrange Files Automatically
+name: Auto Arrange Game Files
 
 on:
-  workflow_dispatch: # Allows you to run it manually from the Actions tab
   push:
     branches:
-      - main # Change to 'master' if your default branch is master
+      - main
 
 jobs:
-  organize:
+  arrange:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-
     steps:
-      - name: Checkout Repository
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Create Folders and Move Files
+      - name: Move files to correct folders
         run: |
-          # 1. Create target directories
-          mkdir -p src/js src/css src/html assets/images assets/docs config scripts
+          # Create the necessary folders inside config
+          mkdir -p config/server config/client
+          
+          # Move index.js to server folder
+          mv index.js config/server/ 2>/dev/null || true
+          mv config/index.js config/server/ 2>/dev/null || true
+          
+          # Move client files to client folder
+          mv index.html config/client/ 2>/dev/null || true
+          mv config/index.html config/client/ 2>/dev/null || true
+          
+          mv game.js config/client/ 2>/dev/null || true
+          mv config/game.js config/client/ 2>/dev/null || true
+          
+          mv style.css config/client/ 2>/dev/null || true
+          mv config/style.css config/client/ 2>/dev/null || true
 
-          # 2. Organize Web & Source Files (ignoring root index.html if you want it kept at root)
-          find . -maxdepth 1 -name "*.js" ! -name ".*" -exec mv {} src/js/ \; || true
-          find . -maxdepth 1 -name "*.css" -exec mv {} src/css/ \; || true
-          # To keep root index.html at root, move other html files:
-          find . -maxdepth 1 -name "*.html" ! -name "index.html" -exec mv {} src/html/ \; || true
-
-          # 3. Organize Assets & Media
-          find . -maxdepth 1 \( -name "*.png" -o -name "*.jpg" -o -name "*.jpeg" -o -name "*.svg" -o -name "*.gif" -o -name "*.webp" \) -exec mv {} assets/images/ \; || true
-          find . -maxdepth 1 \( -name "*.pdf" -o -name "*.docx" -o -name "*.txt" \) ! -name "README.md" ! -name "LICENSE" -exec mv {} assets/docs/ \; || true
-
-          # 4. Organize Configs & Utility Scripts
-          find . -maxdepth 1 \( -name "*.json" -o -name "*.yaml" -o -name "*.yml" -o -name "*.toml" \) ! -path "./.github/*" -exec mv {} config/ \; || true
-          find . -maxdepth 1 \( -name "*.sh" -o -name "*.py" -o -name "*.lua" \) -exec mv {} scripts/ \; || true
-
-          # Remove empty created directories if no matching files were found
-          find src assets config scripts -type d -empty -delete 2>/dev/null || true
-
-      - name: Commit and Push Changes
+      - name: Commit and push changes
         run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add -A
-          # Only commit if there are actual changes
-          if ! git diff --staged --quiet; then
-            git commit -m "chore: auto-arrange files into directories"
-            git push
-          else
-            echo "All files are already organized."
-          fi
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          git add .
+          git commit -m "chore: organize server and client files" || echo "No changes to commit"
+          git push
